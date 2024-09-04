@@ -1,12 +1,11 @@
-
 # Create kubernetes deployment for cart 
 
-resource "kubernetes_deployment" "kube-carts-deployment" {
+resource "kubernetes_deployment" "kube-user-deployment" {
   metadata {
-    name      = "carts"
+    name      = "user"
     namespace = kubernetes_namespace.kube-namespace.id
     labels = {
-      name = "carts"
+      name = "user"
     }
   }
 
@@ -14,33 +13,33 @@ resource "kubernetes_deployment" "kube-carts-deployment" {
     replicas = 1
     selector {
       match_labels = {
-        name = "carts"
+        name = "user"
       }
     }
     template {
       metadata {
         labels = {
-          name = "carts"
+          name = "user"
         }
       }
       spec {
         container {
-          image = "weaveworksdemos/carts:0.4.8"
-          name  = "carts"
+          image = "weaveworksdemos/user:0.4.7"
+          name  = "user"
 
       env {
-        name = "JAVA_OPTS"
-        value = "-Xms64m -Xmx128m -XX:+UseG1GC -Djava.security.egd=file:/dev/urandom -Dspring.zipkin.enabled=false"
+        name = "mongo"
+        value = "user-db:27017"
       }
 
       resources {
         limits = {
           cpu = "300m"
-          memory = "500Mi"
+          memory = "200Mi"
         }
         requests = {
           cpu = "100m"
-          memory = "200Mi"
+          memory = "100Mi"
         }
       }
 
@@ -56,25 +55,32 @@ resource "kubernetes_deployment" "kube-carts-deployment" {
         read_only_root_filesystem = true
         run_as_non_root = true
         run_as_user = 10001
-        #privileged = false
-        #readOnlyRootFilesystem = true
-       # runAsNonRoot = true
-        #runAsUser = 10001
+        /* readOnlyRootFilesystem = true
+        runAsNonRoot = true
+        runAsUser = 10001 */
       }
 
-      volume_mount {
-        name = "tmp-volume"
-        mount_path = "/tmp"
-      }
+     liveness_probe {
+         http_get {
+              path = "/health"
+              port = 80
         }
-       
-     volume {
-        name = "tmp-volume"
-        empty_dir {
-            medium = "Memory"
+        initial_delay_seconds = 300
+        period_seconds = 3
+    }
+
+     readiness_probe {
+        http_get {
+            path = "/health"
+            port = 80
+         }
+            initial_delay_seconds = 180
+            period_seconds = 3
+    }
         }
+       node_selector = {
+        "beta.kubernetes.io/os" = "linux"
       }
-         
       }
     }
   }
@@ -85,21 +91,21 @@ resource "kubernetes_deployment" "kube-carts-deployment" {
 
 # Create kubernetes  for cart service
 
-resource "kubernetes_service" "kube-carts-service" {
+resource "kubernetes_service" "kube-user-service" {
   metadata {
-    name      = "carts"
+    name      = "user"
     namespace = kubernetes_namespace.kube-namespace.id
   /*   annotations = {
         prometheus.io/scrape: "true"
     } */
 
     labels = {
-        name = "carts"
+        name = "user"
     }
   }
   spec {
     selector = {
-      name = "carts"
+      name = "user"
     }
     port {
       port        = 80
@@ -113,12 +119,12 @@ resource "kubernetes_service" "kube-carts-service" {
 # create kubernetes cart-db deployment
 
 
-resource "kubernetes_deployment" "kube-carts-db-deployment" {
+resource "kubernetes_deployment" "kube-user-db-deployment" {
   metadata {
-    name      = "carts-db"
+    name      = "user-db"
     namespace = kubernetes_namespace.kube-namespace.id
     labels = {
-      name = "carts-db"
+      name = "user-db"
     }
   }
 
@@ -126,23 +132,23 @@ resource "kubernetes_deployment" "kube-carts-db-deployment" {
     replicas = 1
     selector {
       match_labels = {
-        name = "carts-db"
+        name = "user-db"
       }
     }
     template {
       metadata {
         labels = {
-          name = "carts-db"
+          name = "user-db"
         }
       }
       spec {
         container {
-          image = "mongo"
-          name  = "carts-db"
+          image = "weaveworksdemos/user-db:0.3.0"
+          name  = "user-db"
 
        port {
         name = "mongo"
-        container_port = 80
+        container_port = 27017
       }
 
       security_context {
@@ -150,9 +156,8 @@ resource "kubernetes_deployment" "kube-carts-db-deployment" {
           drop = ["ALL"]
           add = ["CHOWN", "SETGID", "SETUID"]
         }
-
-        #readOnlyRootFilesystem = false
         read_only_root_filesystem = true
+       # readOnlyRootFilesystem = false
             
         }
 
@@ -162,17 +167,16 @@ resource "kubernetes_deployment" "kube-carts-db-deployment" {
       }
 
         }
+
      volume {
         name = "tmp-volume"
         empty_dir {
             medium = "Memory"
         }
       }
-  
       node_selector = {
         "beta.kubernetes.io/os" = "linux"
       }
-
       }
     }
   }
@@ -181,17 +185,17 @@ resource "kubernetes_deployment" "kube-carts-db-deployment" {
 
 # service for cart-db
 
-resource "kubernetes_service" "kube-carts-db-service" {
+resource "kubernetes_service" "kube-user-db-service" {
   metadata {
-    name      = "carts-db"
+    name      = "user-db"
     namespace = kubernetes_namespace.kube-namespace.id
     labels = {
-        name = "carts-db"
+        name = "user-db"
     }
   }
   spec {
     selector = {
-      name = "carts-db"
+      name = "user-db"
     }
     port {
       port        = 27017
