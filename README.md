@@ -24,7 +24,7 @@ This project demostrates the deployment of a microservices-based application, sp
 ## Prerequisites
 
 - **Operating System**: Windows (using WSL for Linux-based tools)
-- **Tools**: Docker, Terraform, Ansible, kubectl, Helm, Jenkins, AWs CLI
+- **Tools**: Docker, Terraform, Ansible, kubectl, Helm, Jenkins, AWS CLI
 - **Cloud Provider**: AWS (for EKS, Route 53 and ACM)
 - **Kubernetes**: A running Kubernetes cluster
 
