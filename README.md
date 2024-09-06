@@ -1,3 +1,4 @@
+![Sock Shop Application](./images/sock-shop%20on%20%20browser.jpg)
 # Deployment of the Sock-Shop Application and Prometheus on EKS using Terraform and Jenkins 
 
 ## Project Overview
